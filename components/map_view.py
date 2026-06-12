@@ -23,18 +23,27 @@ def render_map_page() -> None:
     # ------------------------------------------------------------------ #
     # Controls                                                             #
     # ------------------------------------------------------------------ #
-    recall_limit = st.selectbox("Records to fetch", [200, 500, 1000], index=1)
+    recall_limit = st.selectbox(
+        "Records to fetch",
+        [200, 500, 1000, 5000, 10000, "All"],
+        index=3,
+        help="Higher counts improve state coverage on the heatmap. "
+        "'All' paginates through the full openFDA dataset (~29k records).",
+    )
+    fetch_all = recall_limit == "All"
 
     # ------------------------------------------------------------------ #
     # Data                                                                 #
     # ------------------------------------------------------------------ #
-    with st.spinner("Loading geographic recall data…"):
-        try:
-            df = fetch_recalls_dataframe(limit=recall_limit)
-            df = clean_dataframe(df)
-        except Exception as exc:
-            st.error(f"Failed to load map data: {exc}")
-            return
+    try:
+        df = fetch_recalls_dataframe(
+            limit=recall_limit if not fetch_all else 1000,
+            fetch_all=fetch_all,
+        )
+        df = clean_dataframe(df)
+    except Exception as exc:
+        st.error(f"Failed to load map data: {exc}")
+        return
 
     if df.empty:
         st.warning("No data available for the map.")
@@ -54,6 +63,11 @@ def render_map_page() -> None:
 
     state_df = state_series.reset_index()
     state_df.columns = ["state", "recall_count"]
+
+    states_with_data = int((state_series > 0).sum())
+    st.caption(
+        f"{len(df):,} recalls loaded · {states_with_data} states/territories with data"
+    )
 
     # ------------------------------------------------------------------ #
     # Choropleth map                                                       #

@@ -1,7 +1,6 @@
 import re
 from typing import List
 
-import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------
@@ -51,7 +50,7 @@ CATEGORY_KEYWORDS: dict = {
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalize and clean a raw openFDA recall DataFrame.
+    Normalizes and cleans raw openFDA recall DataFrame.
 
     - Parses YYYYMMDD date columns to datetime.
     - Strips leading/trailing whitespace from all string columns.
