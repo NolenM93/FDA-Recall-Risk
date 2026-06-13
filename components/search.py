@@ -128,8 +128,10 @@ def render_search_page() -> None:
                  ~df["classification"].str.contains("Class III", na=False)
         m2.metric("Class I (Highest Risk)", int(class1.sum()))
 
-    if "recalling_firm" in df.columns:
-        m3.metric("Unique Firms", int(df["recalling_firm"].nunique()))
+    if "recalling_firm" in df.columns and not df.empty:
+        top_brand = df["recalling_firm"].value_counts().index[0]
+        label = top_brand[:35] + "…" if len(top_brand) > 35 else top_brand
+        m3.metric("Top Recalled Brand", label)
 
     if "reason_for_recall" in df.columns and not df.empty:
         top_reason = df["reason_for_recall"].value_counts().index[0]
