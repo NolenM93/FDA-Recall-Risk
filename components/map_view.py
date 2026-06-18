@@ -26,7 +26,7 @@ def render_map_page() -> None:
     recall_limit = st.selectbox(
         "Records to fetch",
         [200, 500, 1000, 5000, 10000, "All"],
-        index=3,
+        index=1,
         help="Higher counts improve state coverage on the heatmap. "
         "'All' paginates through the full openFDA dataset (~29k records).",
     )
