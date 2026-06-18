@@ -25,20 +25,19 @@ def render_map_page() -> None:
     # ------------------------------------------------------------------ #
     recall_limit = st.selectbox(
         "Records to fetch",
-        [200, 500, 1000, 5000, 10000, "All"],
+        [200, 500, 1000, 5000, 10000, 25000],
         index=1,
         help="Higher counts improve state coverage on the heatmap. "
-        "'All' paginates through the full openFDA dataset (~29k records).",
+        "Maximum is 25,000 — the openFDA API hard limit.",
     )
-    fetch_all = recall_limit == "All"
 
     # ------------------------------------------------------------------ #
     # Data                                                                 #
     # ------------------------------------------------------------------ #
     try:
         df = fetch_recalls_dataframe(
-            limit=recall_limit if not fetch_all else 1000,
-            fetch_all=fetch_all,
+            limit=recall_limit,
+            fetch_all=False,
         )
         df = clean_dataframe(df)
     except Exception as exc:

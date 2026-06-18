@@ -5,6 +5,7 @@ from typing import Optional
 
 BASE_URL = "https://api.fda.gov/food/enforcement.json"
 MAX_LIMIT = 1000
+MAX_SKIP = 25000  # openFDA hard cap — skip values above this return 400
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -35,6 +36,9 @@ def fetch_recalls(
     requests.HTTPError
         If the API returns a non-2xx status code.
     """
+    if skip >= MAX_SKIP:
+        return {"results": []}
+
     params: dict = {"limit": min(limit, MAX_LIMIT), "skip": skip}
     if search_query:
         params["search"] = search_query
@@ -92,6 +96,10 @@ def fetch_recalls_dataframe(
                 break
             page_limit = min(page_limit, remaining)
 
+        # openFDA hard cap: skip > 25,000 returns 400
+        if skip >= 25000:
+            break
+
         try:
             data = fetch_recalls(
                 search_query=search_query,
@@ -99,7 +107,7 @@ def fetch_recalls_dataframe(
                 skip=skip,
             )
         except requests.HTTPError as exc:
-            if exc.response is not None and exc.response.status_code == 404:
+            if exc.response is not None and exc.response.status_code in (400, 404):
                 break
             raise
 
