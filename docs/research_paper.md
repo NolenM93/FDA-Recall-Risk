@@ -112,11 +112,24 @@ The original pitch specified Folium for geographic visualization. During R&D, Fo
 
 The risk scoring module uses NumPy percentile thresholds rather than a trained Scikit-Learn estimator because the feature space - a single integer (recall count per category) - is too narrow to justify supervised learning. Percentile-based classification is transparent, requires no labeled training data, and produces results that update automatically as new API data arrives. Scikit-Learn's `IsolatedForest` and `OneClassSVM` were evaluated for outlier detection; however, Tukey's fence (IQR method) was selected because it is interpretable without domain expertise and produces consistent results on sample sizes as small as 10 firms. The Scikit-Learn import is retained in `requirements.txt` because the production build will require a trained classifier to predict recall risk from leading indicators (ingredient type, company history, season) - a feature planned for the post-MVP phase.
 
+#### Week 3: Predictive Extension Design
+
+Week 3 documents the additive extension to Feature #15 without shipping a trained model. The existing percentile Low / Medium / High scores remain unchanged. A separate watch/trend layer will be computed from leading indicators available in the openFDA enforcement dataset:
+
+| Signal | Source field(s) | Method (Week 4 prototype) |
+|---|---|---|
+| Company recall history | `recalling_firm` | Count recalls per firm; flag categories dominated by a small set of high-volume firms |
+| Repeat-offender firms | `recalling_firm` | Firms with 2+ recalls in the loaded dataset trigger a "Watch" label when they account for a disproportionate share of a category |
+| Category seasonality | `recall_initiation_date`, derived `category` | Compare recent 90-day recall volume to the prior period |
+| Trend direction | `recall_initiation_date` | Flag categories with a rising monthly recall slope using existing monthly aggregation |
+
+Heuristic signals are specified before ML because the project has no labeled training set and a public-safety tool requires explainable outputs. Scikit-learn remains in `requirements.txt` for a future trained classifier once labeled data is available. Unstructured text in `reason_for_recall` and `product_description` is out of scope until Feature #16 (NLP). The Week 4 prototype will implement `compute_predictive_signals()` in `components/risk_scoring.py`, increase the dashboard fetch beyond the current 500-record limit, and display secondary trend/watch lines on risk cards in `components/dashboard.py`.
+
 ---
 
 ## Feasibility Evaluation
 
-The technology stack is confirmed to meet all MVP requirements. The openFDA API supplies all recall fields needed for search, risk scoring, and geographic mapping within a single endpoint. Streamlit delivers a usable multi-page dashboard in Python without a separate frontend framework. Plotly Express covers all three visualization types (line, bar, choropleth) in a unified API. The only capability not yet demonstrated end-to-end is predictive risk scoring from leading indicators, which requires a labeled training set and a trained model - deferred to the post-MVP phase.
+The technology stack is confirmed to meet all MVP requirements. The openFDA API supplies all recall fields needed for search, risk scoring, and geographic mapping within a single endpoint. Streamlit delivers a usable multi-page dashboard in Python without a separate frontend framework. Plotly Express covers all three visualization types (line, bar, choropleth) in a unified API. Predictive risk scoring from leading indicators is not yet implemented in code; the Week 3 design (openFDA field mapping, heuristic signals, additive dashboard UX) is documented in the GUI feature list and above. The working prototype is deferred to Week 4. A full trained classifier still requires a labeled training set and remains a later-phase enhancement beyond the Week 4 heuristic prototype.
 
 **Identified risks and mitigations:**
 

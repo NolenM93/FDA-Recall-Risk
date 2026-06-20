@@ -83,6 +83,48 @@ Features are ordered by user-facing impact, highest first.
 
 ---
 
+## Section 4b , Feature #15 Planned Extension (Week 4)
+
+Feature #15 extends the Risk Dashboard with predictive signals that answer **"what may become high next?"** in addition to the current percentile scoring, which answers **"what is high right now?"**
+
+### Current logic (built, unchanged)
+
+Each food category receives a Low / Medium / High rating from recall frequency relative to other categories using transparent 33rd/67th percentile thresholds in `compute_risk_scores()`.
+
+### Planned additive layer (Week 4 prototype)
+
+The percentile `risk_level` stays. A separate watch/trend layer is added per category without replacing the color-coded score.
+
+| Leading indicator | openFDA field(s) | Planned use (Week 4) |
+|---|---|---|
+| Company recall history | `recalling_firm` | Count recalls per firm; flag categories where a small number of firms account for a large share of recalls |
+| Repeat-offender firms | `recalling_firm` | Firms with 2+ recalls in the loaded dataset; surface a "Watch" signal when they dominate a category |
+| Category seasonality | `recall_initiation_date` + derived `category` | Compare recent 90-day recall volume vs the prior period or same month in prior years |
+| Severity weight (optional) | `classification` | Weight Class I share within a category as an early-warning boost |
+| Trend direction | `recall_initiation_date` | Reuse monthly aggregation logic; flag categories with a rising recall slope |
+
+**Not available without Feature #16 (NLP):** unstructured signals from `reason_for_recall` or `product_description` text.
+
+**Data volume note:** The dashboard currently loads 500 records. The Week 4 prototype should increase fetch size (e.g. 5,000+) so seasonality and firm-history signals are meaningful.
+
+### User-facing change (Week 4)
+
+Risk score cards keep their Low / Medium / High color coding. Each card gains a secondary line when a leading indicator fires, for example:
+
+- `Trend: Rising`
+- `Watch: repeat firms`
+
+### Week 3 vs Week 4 deliverables
+
+| Week | Deliverable |
+|---|---|
+| Week 3 | Leading indicators defined against openFDA fields; additive UX design documented here and in the research paper |
+| Week 4 | Implement `compute_predictive_signals()` in `components/risk_scoring.py`, wire into `components/dashboard.py`, increase dashboard data fetch, test against live API |
+
+Feature #15 remains **Post-MVP** in the table above until the Week 4 code ships.
+
+---
+
 ## Section 5 , Features the Prototype Accomplishes
 
 The current working Streamlit prototype covers all 14 built features listed above across three screens accessible via sidebar navigation:
@@ -109,7 +151,7 @@ The current working Streamlit prototype covers all 14 built features listed abov
 - Record limit selector to control dataset size
 - Hover tooltips showing state name and recall count
 
-Features 15 and 16 (predictive scoring and NLP state extraction) are not present in the current prototype and are scoped for post-MVP development in Week 3 and beyond.
+Feature #15 leading indicators and the additive scoring design are documented in Section 4b (Week 3). The code prototype is deferred to Week 4. Feature #16 (NLP state extraction) remains post-MVP and is not yet documented for implementation.
 
 ---
 

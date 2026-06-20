@@ -37,7 +37,7 @@ def render_dashboard_page() -> None:
 
     with st.spinner("Loading recall data for risk analysis…"):
         try:
-            df = fetch_recalls_dataframe(limit=500)
+            df = fetch_recalls_dataframe(limit=5000)
             df = clean_dataframe(df)
             df = add_category_column(df)
         except Exception as exc:
