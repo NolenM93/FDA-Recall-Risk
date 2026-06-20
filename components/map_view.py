@@ -28,7 +28,7 @@ def render_map_page() -> None:
         [200, 500, 1000, 5000, 10000, 25000],
         index=1,
         help="Higher counts improve state coverage on the heatmap. "
-        "Maximum is 25,000 — the openFDA API hard limit.",
+        "Maximum is 25,000. This is the openFDA API hard limit.",
     )
 
     # ------------------------------------------------------------------ #

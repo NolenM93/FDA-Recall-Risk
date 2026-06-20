@@ -5,7 +5,7 @@ from typing import Optional
 
 BASE_URL = "https://api.fda.gov/food/enforcement.json"
 MAX_LIMIT = 1000
-MAX_SKIP = 25000  # openFDA hard cap — skip values above this return 400
+MAX_SKIP = 25000  # openFDA hard cap - skip values above this return 400
 
 
 @st.cache_data(ttl=300, show_spinner=False)

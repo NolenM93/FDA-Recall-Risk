@@ -25,7 +25,7 @@ def compute_risk_scores(df: pd.DataFrame) -> pd.DataFrame:
     - Top third                     → High
 
     This keeps the scoring transparent and auditable without requiring a
-    trained model — a key requirement for a public-safety tool.
+    trained model. This is a key requirement for a public-safety tool.
 
     Returns
     -------

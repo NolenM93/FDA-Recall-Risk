@@ -1,7 +1,15 @@
+import html
+
 import pandas as pd
 import streamlit as st
 
 from utils.api import fetch_recalls_dataframe
+from utils.classification_help import (
+    CLASS_COLUMN_HELP,
+    CLASS_I_HELP,
+    CLASSIFICATION_FILTER_HELP,
+    help_for_classification,
+)
 from utils.data_processing import add_category_column, clean_dataframe
 
 # ---------------------------------------------------------------------------
@@ -73,6 +81,7 @@ def render_search_page() -> None:
                 "Recall Classification",
                 ["Class I", "Class II", "Class III"],
                 default=[],
+                help=CLASSIFICATION_FILTER_HELP,
             )
         with fb:
             product_type_filter = st.multiselect(
@@ -126,7 +135,11 @@ def render_search_page() -> None:
         class1 = df["classification"].str.contains("Class I", na=False) & \
                  ~df["classification"].str.contains("Class II", na=False) & \
                  ~df["classification"].str.contains("Class III", na=False)
-        m2.metric("Class I (Highest Risk)", int(class1.sum()))
+        m2.metric(
+            "Class I (Highest Risk)",
+            int(class1.sum()),
+            help=CLASS_I_HELP,
+        )
 
     if "recalling_firm" in df.columns and not df.empty:
         top_brand = df["recalling_firm"].value_counts().index[0]
@@ -139,7 +152,9 @@ def render_search_page() -> None:
         m4.metric("Top Recall Reason", label)
 
     # --- Results table ---
-    st.subheader(f"Results — {len(df)} records")
+    st.subheader(f"Results - {len(df)} records")
+    if "classification" in df.columns:
+        st.caption("Hover the **Class** column header for recall severity definitions.")
 
     display_cols = [c for c in _DISPLAY_COLS if c in df.columns]
     display_df = df[display_cols].copy()
@@ -157,6 +172,12 @@ def render_search_page() -> None:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
+        column_config={
+            "Class": st.column_config.TextColumn(
+                "Class",
+                help=CLASS_COLUMN_HELP,
+            ),
+        },
     )
 
     # --- Drill-down detail ---
@@ -169,7 +190,17 @@ def render_search_page() -> None:
             with c1:
                 st.write(f"**Recall #:** {row.get('recall_number', 'N/A')}")
                 st.write(f"**Company:** {row.get('recalling_firm', 'N/A')}")
-                st.write(f"**Classification:** {row.get('classification', 'N/A')}")
+                classification = row.get("classification", "N/A")
+                class_help = help_for_classification(str(classification))
+                if class_help:
+                    st.markdown(
+                        f'**Classification:** '
+                        f'<span title="{html.escape(class_help)}">'
+                        f'{html.escape(str(classification))}</span>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.write(f"**Classification:** {classification}")
                 st.write(f"**Status:** {row.get('status', 'N/A')}")
             with c2:
                 date_val = row.get("recall_initiation_date", pd.NaT)
