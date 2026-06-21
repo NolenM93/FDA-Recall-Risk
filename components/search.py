@@ -128,28 +128,33 @@ def render_search_page() -> None:
 
     # --- Summary metrics ---
     st.subheader("Summary")
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Recalls", len(df))
+    col_totals, col_class, col_detail = st.columns([1, 1, 2])
 
-    if "classification" in df.columns:
-        class1 = df["classification"].str.contains("Class I", na=False) & \
-                 ~df["classification"].str.contains("Class II", na=False) & \
-                 ~df["classification"].str.contains("Class III", na=False)
-        m2.metric(
-            "Class I (Highest Risk)",
-            int(class1.sum()),
-            help=CLASS_I_HELP,
-        )
+    with col_totals:
+        st.metric("Total Recalls", len(df))
 
-    if "recalling_firm" in df.columns and not df.empty:
-        top_brand = df["recalling_firm"].value_counts().index[0]
-        label = top_brand[:35] + "…" if len(top_brand) > 35 else top_brand
-        m3.metric("Top Recalled Brand", label)
+    with col_class:
+        if "classification" in df.columns:
+            class1 = df["classification"].str.contains("Class I", na=False) & \
+                     ~df["classification"].str.contains("Class II", na=False) & \
+                     ~df["classification"].str.contains("Class III", na=False)
+            st.metric(
+                "Class I (Highest Risk)",
+                int(class1.sum()),
+                help=CLASS_I_HELP,
+            )
 
-    if "reason_for_recall" in df.columns and not df.empty:
-        top_reason = df["reason_for_recall"].value_counts().index[0]
-        label = top_reason[:35] + "…" if len(top_reason) > 35 else top_reason
-        m4.metric("Top Recall Reason", label)
+    show_brand = "recalling_firm" in df.columns and not df.empty
+    show_reason = "reason_for_recall" in df.columns and not df.empty
+    if show_brand or show_reason:
+        with col_detail:
+            with st.container(border=True):
+                if show_brand:
+                    top_brand = df["recalling_firm"].value_counts().index[0]
+                    st.metric("Top Recalled Brand", top_brand)
+                if show_reason:
+                    top_reason = df["reason_for_recall"].value_counts().index[0]
+                    st.metric("Top Recall Reason", top_reason)
 
     # --- Results table ---
     st.subheader(f"Results - {len(df)} records")
