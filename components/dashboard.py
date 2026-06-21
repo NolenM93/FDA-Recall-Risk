@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from components.risk_scoring import RISK_COLORS, compute_risk_scores
@@ -17,6 +18,54 @@ _CHART_LAYOUT = dict(
     font_color="#e2e8f0",
     margin=dict(l=0, r=0, t=40, b=0),
 )
+
+
+def _monthly_recall_volume_chart(trend_df: pd.DataFrame):
+    """Line chart of recall counts by month with readable axis labels and hover."""
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=trend_df["month"],
+                y=trend_df["recall_count"],
+                mode="lines+markers",
+                line=dict(color="#f97316", width=2.5),
+                marker=dict(
+                    size=14,
+                    color="#f97316",
+                    symbol="circle",
+                    line=dict(width=2, color="#ffffff"),
+                    opacity=1,
+                ),
+                hovertemplate="<b>%{x|%b %Y}</b><br>Recalls: %{y}<extra></extra>",
+                connectgaps=False,
+            )
+        ]
+    )
+
+    span_days = (trend_df["month"].max() - trend_df["month"].min()).days
+    if span_days > 365 * 5:
+        dtick = "M12"
+    elif span_days > 365 * 2:
+        dtick = "M6"
+    else:
+        dtick = "M3"
+
+    layout = {
+        **_CHART_LAYOUT,
+        "margin": dict(l=0, r=0, t=40, b=80),
+        "hovermode": "closest",
+        "hoverlabel": dict(bgcolor="#1e293b", bordercolor="#f97316", font_size=14),
+        "xaxis_title": "Month",
+        "yaxis_title": "Recalls",
+    }
+    fig.update_layout(**layout)
+    fig.update_xaxes(
+        tickformat="%b %Y",
+        hoverformat="%b %Y",
+        dtick=dtick,
+        tickangle=-45,
+    )
+    return fig
 
 
 def _risk_card(category: str, level: str, count: int) -> str:
@@ -71,16 +120,12 @@ def render_dashboard_page() -> None:
 
     with col_left:
         st.subheader("Monthly Recall Volume")
+        st.caption(
+            "Tip: use the expand icon in the top-right corner of the chart to view it in fullscreen."
+        )
         trend_df = aggregate_by_month(df)
         if not trend_df.empty:
-            fig = px.line(
-                trend_df,
-                x="month",
-                y="recall_count",
-                labels={"month": "Month", "recall_count": "Recalls"},
-            )
-            fig.update_traces(line_color="#f97316", line_width=2.5)
-            fig.update_layout(**_CHART_LAYOUT)
+            fig = _monthly_recall_volume_chart(trend_df)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No date data available for trend chart.")
