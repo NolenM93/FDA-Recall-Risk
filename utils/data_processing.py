@@ -62,7 +62,12 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Parse date columns (openFDA encodes dates as 'YYYYMMDD' strings)
-    for date_col in ("recall_initiation_date", "report_date", "center_classification_date"):
+    for date_col in (
+        "recall_initiation_date",
+        "report_date",
+        "center_classification_date",
+        "termination_date",
+    ):
         if date_col in df.columns:
             df[date_col] = pd.to_datetime(df[date_col], format="%Y%m%d", errors="coerce")
 
@@ -116,6 +121,8 @@ def add_category_column(df: pd.DataFrame) -> pd.DataFrame:
 
 _STATE_TOKEN_RE = re.compile(r"\b([A-Z]{2})\b")
 
+NATIONWIDE_TOKENS = {"nationwide", "all states", "all 50 states", "united states"}
+
 
 def extract_states(distribution_pattern: str) -> List[str]:
     """
@@ -129,9 +136,24 @@ def extract_states(distribution_pattern: str) -> List[str]:
     if not distribution_pattern:
         return []
 
+    text = distribution_pattern.lower().strip()
+    if any(tok in text for tok in NATIONWIDE_TOKENS):
+        return list(US_STATES)
+
     text = distribution_pattern.upper()
     tokens = _STATE_TOKEN_RE.findall(text)
     return [t for t in tokens if t in US_STATES]
+
+
+def filter_recalls_by_state(df: pd.DataFrame, state_code: str) -> pd.DataFrame:
+    """Return recalls whose distribution pattern includes the given state."""
+    if df.empty or "distribution_pattern" not in df.columns:
+        return df.iloc[0:0].copy()
+
+    mask = df["distribution_pattern"].apply(
+        lambda pattern: state_code in extract_states(str(pattern))
+    )
+    return df[mask].copy()
 
 
 def build_state_counts(df: pd.DataFrame) -> pd.Series:
