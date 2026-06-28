@@ -2,10 +2,9 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from components.state_detail import show_state_detail
+from components.state_detail import reset_state_detail_from_map, show_state_detail
 from utils.api import fetch_recalls_dataframe
 from utils.data_processing import (
-    ALL_STATES,
     add_category_column,
     build_state_counts,
     clean_dataframe,
@@ -119,20 +118,13 @@ def render_map_page() -> None:
     if event.selection and event.selection.points:
         clicked_state = event.selection.points[0].get("location")
         if clicked_state:
+            prior_state = st.session_state.get("selected_state")
             st.session_state["selected_state"] = clicked_state
-
-    # ------------------------------------------------------------------ #
-    # State selector + dialog                                              #
-    # ------------------------------------------------------------------ #
-    st.divider()
-    dropdown_state = st.selectbox(
-        "Or select a state to inspect",
-        [""] + ALL_STATES,
-        index=0,
-        format_func=lambda code: "Choose a state…" if code == "" else code,
-    )
-    if dropdown_state:
-        st.session_state["selected_state"] = dropdown_state
+            if clicked_state != prior_state:
+                reset_state_detail_from_map(
+                    clicked_state,
+                    st.session_state.get("map_df", pd.DataFrame()),
+                )
 
     selected_state = st.session_state.get("selected_state")
     if selected_state:

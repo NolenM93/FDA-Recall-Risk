@@ -191,9 +191,16 @@ def _state_api_query(state_code: str) -> str:
     state_name = STATE_NAMES.get(state_code, state_code)
     return (
         f'distribution_pattern:"{state_code}" OR '
-        f'distribution_pattern:"{state_name}" OR '
-        f'distribution_pattern:"nationwide"'
+        f'distribution_pattern:"{state_name}"'
     )
+
+
+def reset_state_detail_from_map(state_code: str, map_df: pd.DataFrame) -> None:
+    """Reset a state's dialog data to the current map dataset."""
+    st.session_state[f"state_detail_df_{state_code}"] = filter_recalls_by_state(
+        map_df, state_code
+    )
+    st.session_state[f"state_detail_source_{state_code}"] = "loaded_dataset"
 
 
 # ---------------------------------------------------------------------------
@@ -215,11 +222,18 @@ def show_state_detail(state_code: str, df: pd.DataFrame) -> None:
     data_source = st.session_state.get(source_key, "loaded_dataset")
 
     st.subheader(f"{state_name} ({state_code})")
-    st.caption(
-        f"Showing recalls distributed to {state_code} from the "
-        f"{'openFDA query' if data_source == 'api_fetch' else 'loaded dataset'} "
-        f"({len(df):,} total records loaded on map). Results may be incomplete."
-    )
+    if data_source == "api_fetch":
+        st.caption(
+            f"Showing {len(state_df):,} recalls that explicitly name {state_code} "
+            f"in their distribution notes, fetched directly from openFDA. "
+            f"Note: nationwide recalls are not included in this view."
+        )
+    else:
+        st.caption(
+            f"Showing {len(state_df):,} recalls distributed to {state_code} "
+            f"from the map dataset ({len(df):,} records loaded). "
+            f"This includes nationwide recalls. Raise the map record count for better coverage."
+        )
 
     if state_df.empty:
         st.info(
@@ -227,7 +241,13 @@ def show_state_detail(state_code: str, df: pd.DataFrame) -> None:
             "Try increasing the record count on the map or use the button below."
         )
 
-    if st.button(f"Load all {state_code} recalls from openFDA", type="secondary"):
+    if st.button(
+        f"Search openFDA for recalls that name {state_code} in distribution notes",
+        type="secondary",
+        help=f"Queries openFDA directly for records where the distribution field explicitly mentions "
+             f"{state_code} or {STATE_NAMES.get(state_code, state_code)}. "
+             f"Returns up to 1,000 matches. Nationwide recalls are excluded from this result.",
+    ):
         with st.spinner(f"Fetching recalls for {state_name}…"):
             try:
                 fetched = fetch_recalls_dataframe(
